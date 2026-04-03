@@ -30,6 +30,7 @@ export default function RegisterPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          name: form.name,
           email: form.email,
           password: form.password,
         }),
@@ -63,6 +64,7 @@ export default function RegisterPage() {
               type="text"
               placeholder="Enter your name"
               className="w-full mt-1 p-2 border rounded-md"
+              value={form.name}
               onChange={handleChange}
               required
             />
@@ -75,6 +77,7 @@ export default function RegisterPage() {
               type="email"
               placeholder="Enter your email"
               className="w-full mt-1 p-2 border rounded-md"
+              value={form.email}
               onChange={handleChange}
               required
             />
@@ -87,6 +90,7 @@ export default function RegisterPage() {
               type="password"
               placeholder="Enter password"
               className="w-full mt-1 p-2 border rounded-md"
+              value={form.password}
               onChange={handleChange}
               required
             />
