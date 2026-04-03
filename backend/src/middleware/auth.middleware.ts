@@ -3,8 +3,12 @@ import jwt from "jsonwebtoken";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret";
 
+interface AuthRequest extends Request {
+  user?: { userId: number };
+}
+
 export const authenticate = (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -17,8 +21,11 @@ export const authenticate = (
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, ACCESS_SECRET) as any;
-    (req as any).user = decoded;
+    const decoded = jwt.verify(token, ACCESS_SECRET) as {
+      userId: number;
+    };
+
+    req.user = decoded;
 
     next();
   } catch (error) {
