@@ -62,3 +62,21 @@ export const loginUser = async (email: string, password: string) => {
     refreshToken,
   };
 };
+
+export const refreshAccessToken = async (refreshToken: string) => {
+  if (!refreshToken) {
+    throw new Error("Refresh token required");
+  }
+
+  try {
+    const decoded: any = jwt.verify(refreshToken, REFRESH_SECRET);
+
+    const newAccessToken = jwt.sign({ userId: decoded.userId }, ACCESS_SECRET, {
+      expiresIn: "15m",
+    });
+
+    return { accessToken: newAccessToken };
+  } catch (error) {
+    throw new Error("Invalid refresh token");
+  }
+};

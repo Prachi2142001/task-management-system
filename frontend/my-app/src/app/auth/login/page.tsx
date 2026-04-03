@@ -39,7 +39,8 @@ export default function LoginPage() {
       localStorage.setItem("refreshToken", data.refreshToken);
 
       alert("Login successful");
-      router.push("/");
+      router.push("/dashboard");
+      
     } catch (err: any) {
       alert(err.message);
     } finally {
