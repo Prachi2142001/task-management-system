@@ -137,7 +137,7 @@ export default function Dashboard() {
         </div>
 
         <button
-          className="mt-3 sm:mt-0 px-5 py-2 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium hover:opacity-90 transition"
+          className="mt-3 cursor-pointer sm:mt-0 px-5 py-2 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium hover:opacity-90 transition"
           onClick={() => {
             localStorage.clear();
             toast.success("Logged out successfully");
