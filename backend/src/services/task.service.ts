@@ -15,7 +15,10 @@ export const createTask = async (userId: number, body: any) => {
 };
 
 export const getTasks = async (userId: number, query: any) => {
-  const { search = "", status } = query;
+  const { search = "", status, page = "1", limit = "5" } = query;
+
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
 
   const where: any = {
     userId,
@@ -23,17 +26,27 @@ export const getTasks = async (userId: number, query: any) => {
       contains: search,
     },
   };
-
   if (status === "true") {
     where.completed = true;
   } else if (status === "false") {
     where.completed = false;
   }
 
-  return prisma.task.findMany({
+  const total = await prisma.task.count({ where });
+
+  const tasks = await prisma.task.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    skip: (pageNumber - 1) * limitNumber,
+    take: limitNumber,
   });
+
+  return {
+    tasks,
+    total,
+    page: pageNumber,
+    totalPages: Math.ceil(total / limitNumber),
+  };
 };
 
 export const updateTask = async (userId: number, id: number, body: any) => {

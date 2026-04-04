@@ -9,7 +9,11 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
   const router = useRouter();
 
@@ -30,23 +34,31 @@ export default function Dashboard() {
 
   const fetchTasks = async () => {
     try {
-      let url = `/tasks?search=${search}`;
+      let url = `/tasks?page=${page}&limit=5&search=${search}`;
 
-      if (filter !== "all") {
-        url += `&status=${filter === "completed" ? "true" : "false"}`;
+      if (filter === "completed") {
+        url += `&status=true`;
+      } else if (filter === "pending") {
+        url += `&status=false`;
       }
 
       const res = await apiFetch(url);
       const data = await res.json();
-      setTasks(data);
+
+      setTasks(data.tasks);
+      setTotalPages(data.totalPages);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to fetch tasks"); 
+      toast.error("Failed to fetch tasks");
     }
   };
 
   useEffect(() => {
     fetchTasks();
+  }, [search, filter, page]);
+
+  useEffect(() => {
+    setPage(1);
   }, [search, filter]);
 
   const createTask = async () => {
@@ -62,7 +74,7 @@ export default function Dashboard() {
 
       setTitle("");
       fetchTasks();
-      toast.success("Task added successfully"); 
+      toast.success("Task added successfully");
     } catch {
       toast.error("Failed to add task");
     }
@@ -76,10 +88,28 @@ export default function Dashboard() {
 
       if (!res.ok) throw new Error();
 
-      fetchTasks();
-      toast.success("Task updated"); 
+      await fetchTasks();
+      toast.success("Task updated");
     } catch {
       toast.error("Failed to update task");
+    }
+  };
+
+  const updateTask = async (id: number) => {
+    try {
+      const res = await apiFetch(`/tasks/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title: editTitle }),
+      });
+
+      if (!res.ok) throw new Error();
+
+      toast.success("Task updated");
+      setEditingId(null);
+      setEditTitle("");
+      fetchTasks();
+    } catch {
+      toast.error("Update failed");
     }
   };
 
@@ -92,13 +122,11 @@ export default function Dashboard() {
       if (!res.ok) throw new Error();
 
       fetchTasks();
-      toast.success("Task deleted"); 
+      toast.success("Task deleted");
     } catch {
-      toast.error("Failed to delete task"); 
+      toast.error("Failed to delete task");
     }
   };
-
-  console.log("FILTER VALUE:", filter);
 
   return (
     <div className="p-10 max-w-xl mx-auto">
@@ -141,15 +169,42 @@ export default function Dashboard() {
             key={task.id}
             className="border p-3 flex justify-between items-center"
           >
-            <p
-              className={`${
-                task.completed ? "line-through text-gray-500" : ""
-              }`}
-            >
-              {task.title}
-            </p>
+            {editingId === task.id ? (
+              <input
+                className="border p-1 flex-1 mr-2"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            ) : (
+              <p
+                className={`${
+                  task.completed ? "line-through text-gray-500" : ""
+                }`}
+              >
+                {task.title}
+              </p>
+            )}
 
             <div className="flex gap-2">
+              {editingId === task.id ? (
+                <button
+                  onClick={() => updateTask(task.id)}
+                  className="text-green-600"
+                >
+                  Save
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setEditingId(task.id);
+                    setEditTitle(task.title);
+                  }}
+                  className="text-yellow-600"
+                >
+                  Edit
+                </button>
+              )}
+
               <button
                 onClick={() => toggleTask(task.id)}
                 className="text-blue-500"
@@ -168,11 +223,32 @@ export default function Dashboard() {
         ))}
       </div>
 
+      <div className="flex justify-center gap-4 mt-6">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((prev) => prev - 1)}
+          className="px-3 py-1 border disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        <span>
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage((prev) => prev + 1)}
+          className="px-3 py-1 border disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
       <button
         className="mt-6 text-sm text-red-500"
         onClick={() => {
           localStorage.clear();
-          toast.success("Logged out successfully"); 
+          toast.success("Logged out successfully");
           router.push("/auth/login");
         }}
       >
