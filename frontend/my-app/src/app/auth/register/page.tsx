@@ -1,26 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: any) => {
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!form.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    if (!form.email) {
+      newErrors.email = "Please enter a valid email";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      newErrors.email = "Please enter a valid email";
+    }
+
+    if (!form.password) {
+      newErrors.password = "Password must be at least 6 characters";
+    } else if (form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    if (!form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    } else if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validate()) return;
+
     setLoading(true);
 
     try {
@@ -38,82 +75,132 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || "Something went wrong");
 
-      alert("Registered successfully");
+      toast.success("Registration successful");
       router.push("/auth/login");
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className=" p-8 ">
-        <h1 className="text-2xl font-semibold text-center mb-6">
-          Get Started Now
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400 px-4">
+      <div className="w-full max-w-md bg-white/40 backdrop-blur-lg rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-center text-indigo-600 mb-6">
+          Register
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
           <div>
-            <label className="text-sm font-medium">Name</label>
             <input
               name="name"
               type="text"
-              placeholder="Enter your name"
-              className="w-full mt-1 p-2 border rounded-md"
+              placeholder="Full Name"
+              className={`w-full px-4 py-3 rounded-full border ${
+                errors.name ? "border-red-500" : "border-indigo-400"
+              } focus:outline-none focus:ring-2 ${
+                errors.name ? "focus:ring-red-400" : "focus:ring-indigo-500"
+              } bg-white/70`}
               value={form.name}
               onChange={handleChange}
-              required
             />
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div>
-            <label className="text-sm font-medium">Email address</label>
             <input
               name="email"
-              type="email"
-              placeholder="Enter your email"
-              className="w-full mt-1 p-2 border rounded-md"
+              type="text"
+              placeholder="E-mail"
+              className={`w-full px-4 py-3 rounded-full border ${
+                errors.email ? "border-red-500" : "border-indigo-400"
+              } focus:outline-none focus:ring-2 ${
+                errors.email ? "focus:ring-red-400" : "focus:ring-indigo-500"
+              } bg-white/70`}
               value={form.email}
               onChange={handleChange}
-              required
             />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+            )}
           </div>
 
-          <div>
-            <label className="text-sm font-medium">Password</label>
+          <div className="relative">
             <input
               name="password"
-              type="password"
-              placeholder="Enter password"
-              className="w-full mt-1 p-2 border rounded-md"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              className={`w-full px-4 py-3 rounded-full border ${
+                errors.password ? "border-red-500" : "border-indigo-400"
+              } focus:outline-none focus:ring-2 ${
+                errors.password ? "focus:ring-red-500" : "focus:ring-indigo-500"
+              } bg-white/70`}
               value={form.password}
               onChange={handleChange}
-              required
             />
+            <span
+              className="absolute right-4 top-4 text-sm cursor-pointer text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </span>
           </div>
 
-          <div className="flex items-center text-sm">
+          <div className="relative">
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm Password"
+              className={`w-full px-4 py-3 rounded-full border ${
+                errors.confirmPassword ? "border-red-500" : "border-indigo-400"
+              } focus:outline-none focus:ring-2 ${
+                errors.confirmPassword
+                  ? "focus:ring-red-500"
+                  : "focus:ring-indigo-500"
+              } bg-white/70`}
+              value={form.confirmPassword}
+              onChange={handleChange}
+            />
+
+            <span
+              className="absolute right-4 top-4 text-sm cursor-pointer text-gray-600"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </span>
+
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.confirmPassword}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center text-sm text-gray-700">
             <input type="checkbox" className="mr-2" required />I agree to the
             terms & policy
           </div>
 
           <button
             type="submit"
-            className="w-full bg-green-700 text-white py-2 rounded-md hover:bg-green-800"
+            disabled={loading}
+            className="w-full py-3 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold hover:opacity-90 transition"
           >
-            {loading ? "Signing up..." : "Signup"}
+            {loading ? "Signing up..." : "Register"}
           </button>
 
-          <div className="text-center text-sm mt-4">
-            Have an account?{" "}
-            <Link href="/auth/login" className="text-blue-600">
-              Sign In
-            </Link>
-          </div>
+          <button
+            type="button"
+            className="w-full py-3 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 text-white font-semibold hover:opacity-90 transition"
+            onClick={() => router.push("/auth/login")}
+          >
+            Have account? Sign In
+          </button>
         </form>
       </div>
     </div>
